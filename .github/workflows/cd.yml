@@ -23,7 +23,7 @@ jobs:
         env:
           K8S_NAMESPACE: ${{ secrets.K8S_NAMESPACE }}
         run: |
-          echo "IMAGE=seuusuario/monitor" >> $GITHUB_OUTPUT
+          echo "IMAGE=eduardoavila26/monitor" >> $GITHUB_OUTPUT
           echo "TAG_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
           echo "NAMESPACE=${K8S_NAMESPACE:-default}" >> $GITHUB_OUTPUT
 
