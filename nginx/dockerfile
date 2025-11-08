@@ -1,0 +1,16 @@
+# Usa a imagem oficial do Nginx como base
+FROM nginx:alpine
+
+# Copia sua configuração customizada para o local onde o Nginx espera
+# O arquivo 'default.conf' que está na sua pasta 'nginx/' será copiado para
+# o local de configuração padrão dentro do container.
+COPY default.conf /etc/nginx/conf.d/default.conf
+
+# Se você tiver arquivos estáticos (HTML/CSS/JS) para servir:
+# COPY <caminho_dos_arquivos_estaticos> /usr/share/nginx/html
+
+# Expor a porta 80 (padrão do HTTP)
+EXPOSE 80
+
+# O comando padrão do Nginx para iniciar já está na imagem base
+CMD ["nginx", "-g", "daemon off;"]
