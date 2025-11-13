@@ -7,12 +7,11 @@ on:
 
 permissions:
   contents: read
-
 jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
-    runs-on: ubuntu-latest
-    environment: production  # opcional: exige aprovação manual no GitHub Environments
+    runs-on: self-hosted
+    environment: production
 
     steps:
       - name: Checkout
@@ -42,8 +41,7 @@ jobs:
           kubectl get ns ${{ steps.vars.outputs.NAMESPACE }} || \
           kubectl create ns ${{ steps.vars.outputs.NAMESPACE }}
 
-      # Aplica/garante os serviços/ingress/etc. estáticos (opcional na primeira vez)
-      - name: Apply base manifests (Service, Prometheus, Grafana, Nginx)
+      - name: Apply base manifests
         run: |
           kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/service.yaml || true
           kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/prometheus-deployment.yaml || true
@@ -52,12 +50,10 @@ jobs:
           kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/nginx-service.yaml || true
           kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/prometheus-config.yaml || true
 
-      # Aplica o Deployment da aplicação (se ainda não existir)
-      - name: Apply app deployment (first time)
+      - name: Apply app deployment
         run: |
           kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/deployment.yaml
 
-      # Atualiza a imagem para a nova tag gerada no CI
       - name: Set image to new tag
         run: |
           kubectl set image deployment/monitor monitor=${{ steps.vars.outputs.IMAGE }}:${{ steps.vars.outputs.TAG_SHA }} -n ${{ steps.vars.outputs.NAMESPACE }}
@@ -66,7 +62,7 @@ jobs:
         run: |
           kubectl rollout status deployment/monitor -n ${{ steps.vars.outputs.NAMESPACE }} --timeout=120s
 
-      - name: Show services (debug)
+      - name: Show services
         run: |
           kubectl get svc -n ${{ steps.vars.outputs.NAMESPACE }}
           kubectl get pods -o wide -n ${{ steps.vars.outputs.NAMESPACE }}
