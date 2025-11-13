@@ -24,7 +24,7 @@ jobs:
       - name: Set vars
         id: vars
         run: |
-          echo "IMAGE=seuusuario/monitor" >> $GITHUB_OUTPUT
+          echo "IMAGE=eduardoavila26/monitor" >> $GITHUB_OUTPUT
           echo "TAG_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
           echo "NAMESPACE=${{ secrets.K8S_NAMESPACE || 'default' }}" >>
           $GITHUB_OUTPUT
