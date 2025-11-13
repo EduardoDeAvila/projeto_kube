@@ -30,18 +30,7 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Configure kubeconfig
-        run: |
-          $kubePath = "$env:USERPROFILE\.kube"
-          if (!(Test-Path $kubePath)) {
-            New-Item -ItemType Directory -Path $kubePath | Out-Null
-          }
-
-          $decoded = [System.Text.Encoding]::UTF8.GetString(
-            [System.Convert]::FromBase64String("${{ secrets.KUBE_CONFIG_DATA }}")
-          )
-
-          $decoded | Out-File -FilePath "$kubePath\config" -Encoding ascii
+      
 
       - name: Create namespace if not exists
         run: |
