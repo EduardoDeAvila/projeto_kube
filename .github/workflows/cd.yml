@@ -3,7 +3,7 @@ name: CD - Deploy to Kubernetes
 on:
   workflow_run:
     workflows: ["CI - Build & Push Docker"]
-    types: [ "completed" ]
+    types: ["completed"]
 
 permissions:
   contents: read
@@ -25,12 +25,12 @@ jobs:
         id: vars
         shell: pwsh
         run: |
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "IMAGE=eduardoavila26/monitor"
+          Add-Content -Path $env:GITHUB_OUTPUT -Value "IMAGE=seuusuario/monitor"
           Add-Content -Path $env:GITHUB_OUTPUT -Value "TAG_SHA=$($env:GITHUB_SHA.Substring(0,7))"
 
-          if (-not "${{ secrets.K8S_NAMESPACE }}") {
-              Write-Host "❌ ERRO: o secret K8S_NAMESPACE está vazio!"
-              exit 1
+          if ("${{ secrets.K8S_NAMESPACE }}" -eq "") {
+            Write-Host "❌ ERRO: Secret K8S_NAMESPACE não definido!"
+            exit 1
           }
 
           Add-Content -Path $env:GITHUB_OUTPUT -Value "NAMESPACE=${{ secrets.K8S_NAMESPACE }}"
@@ -38,7 +38,7 @@ jobs:
       - name: Debug namespace
         shell: pwsh
         run: |
-          Write-Host "Namespace: ${{ steps.vars.outputs.NAMESPACE }}"
+          Write-Host "Namespace detectado: ${{ steps.vars.outputs.NAMESPACE }}"
 
       # -------------------------
       # KUBECTL
@@ -46,7 +46,7 @@ jobs:
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: 'latest'
+          version: "latest"
 
       # -------------------------
       # KUBECONFIG PARA WINDOWS
