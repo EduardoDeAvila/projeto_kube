@@ -23,17 +23,12 @@ jobs:
       # -------------------------
       - name: Set vars
         id: vars
-        shell: pwsh
         run: |
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "IMAGE=seuusuario/monitor"
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "TAG_SHA=$($env:GITHUB_SHA.Substring(0,7))"
+          echo "IMAGE=seuusuario/monitor" >> $GITHUB_OUTPUT
+          echo "TAG_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
+          echo "NAMESPACE=${{ secrets.K8S_NAMESPACE || 'default' }}" >>
+          $GITHUB_OUTPUT
 
-          if ("${{ secrets.K8S_NAMESPACE }}" -eq "") {
-            Write-Host "❌ ERRO: Secret K8S_NAMESPACE não definido!"
-            exit 1
-          }
-
-          Add-Content -Path $env:GITHUB_OUTPUT -Value "NAMESPACE=${{ secrets.K8S_NAMESPACE }}"
 
       - name: Debug namespace
         shell: pwsh
