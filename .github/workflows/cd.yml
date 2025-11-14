@@ -23,12 +23,17 @@ jobs:
       # -------------------------
       - name: Set vars
         id: vars
+        shell: pwsh
         run: |
-          echo "IMAGE=eduardoavila26/monitor" >> $GITHUB_OUTPUT
-          echo "TAG_SHA=${GITHUB_SHA::7}" >> $GITHUB_OUTPUT
-          echo "NAMESPACE=${{ secrets.K8S_NAMESPACE || 'default' }}" >>
-          $GITHUB_OUTPUT
+          echo "IMAGE=eduardoavila26/monitor" >> $env:GITHUB_OUTPUT
+          echo "TAG_SHA=$($env:GITHUB_SHA.Substring(0,7))" >> $env:GITHUB_OUTPUT
 
+          if (-not "${{ secrets.K8S_NAMESPACE }}") {
+            Write-Host "❌ ERRO: Secret K8S_NAMESPACE não definido!"
+            exit 1
+          }
+
+          echo "NAMESPACE=${{ secrets.K8S_NAMESPACE }}" >> $env:GITHUB_OUTPUT
 
       - name: Debug namespace
         shell: pwsh
@@ -41,66 +46,8 @@ jobs:
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
         with:
-          version: "latest"
+          version: 'latest'
 
       # -------------------------
-      # KUBECONFIG PARA WINDOWS
+      # CONFIGURE KUBECONFIG (WINDOWS)
       # -------------------------
-      - name: Configure kubeconfig
-        shell: pwsh
-        run: |
-          $kubePath = "$env:USERPROFILE\.kube"
-          if (!(Test-Path $kubePath)) {
-            New-Item -ItemType Directory -Path $kubePath | Out-Null
-          }
-
-          $decoded = [System.Text.Encoding]::UTF8.GetString(
-            [System.Convert]::FromBase64String("${{ secrets.KUBE_CONFIG_DATA }}")
-          )
-
-          $decoded | Out-File -FilePath "$kubePath\config" -Encoding ascii
-
-      # -------------------------
-      # CREATE NS
-      # -------------------------
-      - name: Create namespace if not exists
-        shell: pwsh
-        run: |
-          kubectl get ns ${{ steps.vars.outputs.NAMESPACE }}
-          if ($LASTEXITCODE -ne 0) {
-            kubectl create ns ${{ steps.vars.outputs.NAMESPACE }}
-          }
-
-      # -------------------------
-      # APPLY MANIFESTS
-      # -------------------------
-      - name: Apply base manifests
-        shell: pwsh
-        run: |
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/service.yaml
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/prometheus-deployment.yaml
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/grafana-deployment.yaml
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/nginx-deployment.yaml
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/nginx-service.yaml
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/prometheus-config.yaml
-
-      - name: Apply app deployment
-        shell: pwsh
-        run: |
-          kubectl apply -n ${{ steps.vars.outputs.NAMESPACE }} -f k8s/deployment.yaml
-
-      - name: Set image to new tag
-        shell: pwsh
-        run: |
-          kubectl set image deployment/monitor monitor=${{ steps.vars.outputs.IMAGE }}:${{ steps.vars.outputs.TAG_SHA }} -n ${{ steps.vars.outputs.NAMESPACE }}
-
-      - name: Wait rollout
-        shell: pwsh
-        run: |
-          kubectl rollout status deployment/monitor -n ${{ steps.vars.outputs.NAMESPACE }} --timeout=120s
-
-      - name: Show services
-        shell: pwsh
-        run: |
-          kubectl get svc -n ${{ steps.vars.outputs.NAMESPACE }}
-          kubectl get pods -o wide -n ${{ steps.vars.outputs.NAMESPACE }}
