@@ -3,7 +3,7 @@ name: CD - Deploy to Kubernetes
 on:
   workflow_run:
     workflows: ["CI - Build & Push Docker"]
-    types: ["completed"]
+    types: [ "completed" ]
 
 permissions:
   contents: read
@@ -12,42 +12,30 @@ jobs:
   deploy:
     if: ${{ github.event.workflow_run.conclusion == 'success' }}
     runs-on: self-hosted
-    environment: production
-
+    defaults:
+      run:
+        shell: 'C:\PROGRA~1\Git\bin\bash.exe -e {0}'
+    
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      # -------------------------
-      # VARIÁVEIS (POWERSHELL)
-      # -------------------------
       - name: Set vars
         id: vars
-        shell: pwsh
         run: |
-          echo "IMAGE=eduardoavila26/monitor" >> $env:GITHUB_OUTPUT
-          echo "TAG_SHA=$($env:GITHUB_SHA.Substring(0,7))" >> $env:GITHUB_OUTPUT
+          echo "IMAGEn=eduardoavila26/monitor" >> $GITHUB_OUTPUT
+          FULL_SHA=${{ github.event.workflow_run.head_sha }}
+          echo "TAG_SHA=${FULL_SHA::7}" >> $GITHUB_OUTPUT
+          echo "NAMESPACE=${{ secrets.K8S_NAMESPACE || 'default' }}" >> $GITHUB_OUTPUT
 
-          if (-not "${{ secrets.K8S_NAMESPACE }}") {
-            Write-Host "❌ ERRO: Secret K8S_NAMESPACE não definido!"
-            exit 1
-          }
-
-          echo "NAMESPACE=${{ secrets.K8S_NAMESPACE }}" >> $env:GITHUB_OUTPUT
-
-      - name: Debug namespace
-        shell: pwsh
-        run: |
-          Write-Host "Namespace detectado: ${{ steps.vars.outputs.NAMESPACE }}"
-
-      # -------------------------
-      # KUBECTL
-      # -------------------------
       - name: Setup kubectl
         uses: azure/setup-kubectl@v4
         with:
           version: 'latest'
 
-      # -------------------------
-      # CONFIGURE KUBECONFIG (WINDOWS)
-      # -------------------------
+      - name: Configure kubeconfig
+        id: set_config 
+        run: |
+          mkdir -p $HOME/.kube
+          CONFIG_FILE_PATH=$HOME/.kube/config
+          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > $CONFI
