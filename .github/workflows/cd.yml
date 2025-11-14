@@ -33,9 +33,4 @@ jobs:
         with:
           version: 'latest'
 
-      - name: Configure kubeconfig
-        id: set_config 
-        run: |
-          mkdir -p /.kube
-          CONFIG_FILE_PATH=$HOME/.kube/config
-          echo "${{ secrets.KUBE_CONFIG_DATA }}" | base64 -d > $CONFI
+      
